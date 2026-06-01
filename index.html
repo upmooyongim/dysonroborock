@@ -636,11 +636,15 @@
                     const hdClass = item.channel === 'HD' ? 'hd-highlight' : '';
                     const conflictClass = hasConflict ? 'conflict-bold' : '';
                     
+                    // 캘린더 안에서는 '라이브'/'T컴' 글자를 압축된 태그로 변환
+                    const typeShort = item.type === '라이브' ? '[L]' : '[T]';
                     let extra = item.extra ? ` ${item.extra}` : '';
-                    let content = `${item.time}(${item.duration}) ${item.channel} ${item.type}${extra}`;
+                    
+                    // content에서 item.type 제거 (공간 절약)
+                    let content = `${item.time}(${item.duration}) ${item.channel}${extra}`;
 
                     html += `<div class="cal-item ${hdClass} ${conflictClass}">
-                                <span class="${tagClass}">(${item.brand})</span> ${content}
+                                <span class="${tagClass}">${typeShort}${item.brand}</span> ${content}
                              </div>`;
                 });
                 
