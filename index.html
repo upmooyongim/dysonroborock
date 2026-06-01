@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다이슨/로보락 통합 편성표 관리 시스템 (업무용)</title>
+    <title>다이슨/로보락 통합 편성표 관리 시스템</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Nanum Gothic', sans-serif; margin: 0; padding: 20px; background-color: #f4f6f9; color: #333; }
-        h1 { color: #2c3e50; text-align: center; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
         
         .container { display: flex; flex-direction: column; gap: 20px; max-width: 1400px; margin: 0 auto; }
         .top-section { display: flex; gap: 20px; align-items: stretch; }
@@ -16,12 +16,14 @@
         
         h2 { font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; position: relative; }
         
-        .mode-selector { position: absolute; right: 0; top: 0; font-size: 0.7em; display: flex; gap: 10px; align-items: center; height: 100%; }
-        .mode-selector label { cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: normal; }
+        /* 라이브/T컴 선택 라디오 버튼 스타일 */
+        .mode-selector { position: absolute; right: 0; top: 0; font-size: 0.85em; display: flex; gap: 10px; align-items: center; height: 100%; }
+        .mode-selector label { cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; color: #1a73e8; }
+        .mode-selector input { cursor: pointer; margin: 0; }
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; font-family: monospace; font-size: 0.9em; height: 140px; }
+        textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; font-family: monospace; font-size: 0.9em; height: 120px; }
         button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
         
         .btn-add { background-color: #5cb85c; color: white; margin-top: 10px; }
@@ -86,41 +88,35 @@
         .cal-item { font-size: 0.85em; margin-bottom: 3px; line-height: 1.3; word-break: break-all; padding: 2px 4px; border-radius: 3px; display: flex; align-items: center; gap: 3px; }
         .hd-highlight { background-color: #ffd600; }
         .conflict-bold { font-weight: 900 !important; text-decoration: underline; }
-        .contract-chk { width: 13px; height: 13px; cursor: pointer; margin: 0; flex-shrink: 0; }
-        
-        /* 상단 DB 상태 표시 전용 스타일 */
-        .db-status { font-size: 0.75em; padding: 3px 8px; border-radius: 20px; font-weight: bold; margin-left: 10px; vertical-align: middle; }
-        .status-local { background-color: #e9ecef; color: #495057; }
-        .status-online { background-color: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📅 다이슨/로보락 통합 편성표 관리 시스템 <span id="dbStatusLabel" class="db-status status-local">로컬 저장 모드</span></h1>
+    <h1>📅 다이슨/로보락 통합 편성표 관리 시스템</h1>
 
     <div class="top-section">
         <div class="bulk-section">
-            <h2>신규 편성 입력
+            <h2>신규 편성 등록
                 <div class="mode-selector">
-                    <label><input type="radio" name="inputMode" value="total" checked onchange="toggleWorkMode(false)"> 전체</label>
-                    <label><input type="radio" name="inputMode" value="work" onchange="toggleWorkMode(true)"> 업무용</label>
+                    <label><input type="radio" name="inputType" value="라이브" checked> 라이브</label>
+                    <label><input type="radio" name="inputType" value="T컴" style="margin-left: 5px;"> T컴</label>
                 </div>
             </h2>
             <div class="form-group">
                 <label style="color:#1a73e8;">다이슨 (DS) 편성 텍스트</label>
-                <textarea id="bulkDS" rows="6" placeholder="[입력 양식 예시 - 아래 줄처럼 붙여넣으세요]&#10;6/1(월) 14:30(60) HD 라이브 청소기&#10;6/2(화) 12:35(55) GS T컴 에어스트레이트"></textarea>
+                <textarea id="bulkDS" rows="6" placeholder="[입력 양식 예시]&#10;6/1(월) 14:30(60) HD 청소기&#10;6/2(화) 12:35(55) GS 에어스트레이트"></textarea>
             </div>
             <div class="form-group">
                 <label style="color:#d93025;">로보락 (RR) 편성 텍스트</label>
-                <textarea id="bulkRR" rows="6" placeholder="[입력 양식 예시 - 아래 줄처럼 붙여넣으세요]&#10;6/1(월) 18:40(60) HD T컴 S8 MaxV&#10;6/3(수) 15:30(60) NS 라이브 Q Revo"></textarea>
+                <textarea id="bulkRR" rows="6" placeholder="[입력 양식 예시]&#10;6/1(월) 18:40(60) HD S8 MaxV&#10;6/3(수) 15:30(60) NS Q Revo"></textarea>
             </div>
             <button class="btn-add" onclick="saveBulkSchedules()">단순 일괄 등록 (기존데이터 유지)</button>
             <button class="btn-update" id="btnUpdate" onclick="updateBulkSchedules()">🔄 현재 달력 월(Month) 특정 브랜드 덮어쓰기</button>
             <p id="inputDesc" style="font-size: 0.8em; color: #666; margin-top: 10px; line-height: 1.4;">
-                * <b>덮어쓰기 기능:</b> 화면에 표시된 <b>현재 월(Month)</b> 중 <b>입력창에 데이터를 넣은 브랜드</b>만 새 데이터로 교체합니다. (타 월 데이터 및 미입력 브랜드 절대 보호)<br>
-                * 채널, 방송 구분이 없으면 자동으로 HD T컴으로 등록됩니다.<br>
-                <span style="color: #d93025;">* 단축키: 바깥 화면에서 <b>Ctrl + Z</b> 를 누르면 직전 등록/삭제/수정을 실행 취소합니다.</span>
+                * <b>입력 유형:</b> 상단에서 선택된 <b>[라이브 / T컴]</b> 값이 새로 등록하는 편성에 일괄 적용됩니다.<br>
+                * <b>덮어쓰기:</b> 화면에 표시된 <b>현재 월(Month)</b> 중 <b>텍스트를 넣은 브랜드</b>만 새 데이터로 갱신됩니다. (타 월/미입력 브랜드 데이터 보호)<br>
+                <span style="color: #d93025;">* 단축키: 바깥 화면에서 <b>Ctrl + Z</b> 를 누르면 직전 작업을 실행 취소합니다.</span>
             </p>
         </div>
 
@@ -177,12 +173,6 @@
                     텍스트를 입력하면 기존 일정과 겹치는지 바로 확인합니다.
                 </div>
             </div>
-
-            <div id="workSummaryContainer" class="conflict-section" style="display: none;">
-                <h3 id="workSummaryTitle" style="color: #2e7d32;">📊 티커머스 집계</h3>
-                <div id="workSummaryContent" class="conflict-result" style="background: #e8f5e9; color: #2e7d32; font-size: 1.05em; font-weight: bold; line-height: 1.6;">
-                </div>
-            </div>
         </div>
     </div>
 
@@ -233,9 +223,8 @@
     };
 
     let currentYear = 2026;
-    let currentMonth = 6; // 시작 기본값을 6월로 설정
+    let currentMonth = 6; 
     let schedules = [];
-    let isWorkMode = false;
     let undoStack = []; 
     let db = null;
 
@@ -243,20 +232,15 @@
         5: [5, 24, 25], 6: [6], 8: [15], 10: [3, 9]
     };
 
-    // 파이어베이스 연결 체크 및 초기화
+    // 파이어베이스 초기화
     if (firebaseConfig.apiKey) {
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
-        document.getElementById('dbStatusLabel').innerText = "☁️ 실시간 온라인 동기화 모드";
-        document.getElementById('dbStatusLabel').className = "db-status status-online";
-        
-        // 데이터베이스 실시간 감시 시작
         db.ref('cleanerSchedules').on('value', (snapshot) => {
             schedules = snapshot.val() || [];
             init();
         });
     } else {
-        // 주소가 없으면 기존 LocalStorage 사용
         schedules = JSON.parse(localStorage.getItem('cleanerSchedules')) || [];
         setTimeout(() => { init(); }, 50);
     }
@@ -292,27 +276,6 @@
         }
     });
 
-    function toggleWorkMode(enabled) {
-        isWorkMode = enabled;
-        const desc = document.getElementById('inputDesc');
-        const btnUpdate = document.getElementById('btnUpdate');
-        
-        if (enabled) {
-            btnUpdate.style.display = 'none'; 
-            desc.innerHTML = "* <b>[업무용 모드]</b> 현대 편성만 입력되며 기존 일정의 광고비/목표를 업데이트합니다.<br><span style='color: #d93025;'>* 단축키: 바깥 화면에서 <b>Ctrl + Z</b> 를 누르면 직전 등록/삭제/수정을 실행 취소합니다.</span>";
-            document.getElementById('chkHD').checked = true;
-            document.getElementById('conflictSectionContainer').style.display = 'none';
-            document.getElementById('workSummaryContainer').style.display = 'block';
-        } else {
-            btnUpdate.style.display = 'block'; 
-            desc.innerHTML = "* <b>덮어쓰기 기능:</b> 화면에 표시된 <b>현재 월(Month)</b> 중 <b>입력창에 데이터를 넣은 브랜드</b>만 갱신합니다. (타 월 데이터 및 미입력 브랜드 절대 보호)<br>* 채널, 방송 구분이 없으면 자동으로 HD T컴으로 등록됩니다.<br><span style='color: #d93025;'>* 단축키: 바깥 화면에서 <b>Ctrl + Z</b> 를 누르면 직전 등록/삭제/수정을 실행 취소합니다.</span>";
-            document.getElementById('chkHD').checked = false;
-            document.getElementById('conflictSectionContainer').style.display = 'block';
-            document.getElementById('workSummaryContainer').style.display = 'none';
-        }
-        renderCalendarAndStats();
-    }
-
     function changeMonth(delta) {
         currentMonth += delta;
         if (currentMonth > 12) { currentMonth = 1; currentYear++; }
@@ -326,43 +289,12 @@
         return h * 60 + m;
     }
 
-    function parseAmountToMan(str) {
-        if (!str) return 0;
-        let val = parseFloat(str.replace(/,/g, '').replace(/[^0-9.]/g, ''));
-        if (isNaN(val)) return 0;
-        if (str.includes('억')) return val * 10000;
-        return val;
-    }
-
-    function formatToUk(val) {
-        if (!val) return '0억';
-        let uk = val / 10000;
-        return parseFloat(uk.toFixed(2)) + '억';
-    }
-
-    function handleContractCheck(id, checkbox) {
-        const item = schedules.find(s => s.id === id);
-        if (!item) return;
-
-        let prevState = JSON.parse(JSON.stringify(schedules));
-
-        if (checkbox.checked) {
-            if (confirm("계약서 작성을 완료했습니까?")) {
-                undoStack.push(prevState);
-                item.isContractDone = true;
-            } else { checkbox.checked = false; }
-        } else {
-            if (confirm("실수로 클릭한 것을 되돌리시겠습니까?")) {
-                undoStack.push(prevState);
-                item.isContractDone = false;
-            } else { checkbox.checked = true; }
-        }
-        saveData();
-    }
-
+    // 신규 추가: 덮어쓰기 로직
     function updateBulkSchedules() {
         const dsText = document.getElementById('bulkDS').value;
         const rrText = document.getElementById('bulkRR').value;
+        // 라디오 버튼에서 라이브/T컴 선택값 가져오기
+        const selectedType = document.querySelector('input[name="inputType"]:checked').value;
 
         if (!dsText.trim() && !rrText.trim()) {
             alert("입력된 텍스트가 없습니다.");
@@ -390,7 +322,7 @@
                     let restStr = match[5] ? match[5].trim() : '';
 
                     let channel = 'HD';
-                    let type = 'T컴';
+                    let type = selectedType; // 라디오 버튼 값 적용
                     let extra = "";
 
                     const chMatch = restStr.match(/(현대|HD|롯데|LT|NS|GS|CJ|SK스토아|SK)/i);
@@ -398,6 +330,8 @@
                         channel = chMatch[1].toUpperCase();
                         restStr = restStr.replace(chMatch[0], '').trim();
                     }
+                    
+                    // 기존 양식 호환용: 텍스트 안에 혹시 라이브/T컴이 적혀있다면 우선 추출
                     const tyMatch = restStr.match(/(라이브|T컴)/);
                     if(tyMatch) {
                         type = tyMatch[1];
@@ -413,8 +347,7 @@
 
                     newParsedItems.push({
                         id: Date.now().toString() + Math.random(),
-                        brand: brandTag, dateStr, time, duration, channel, type, extra, day, month,
-                        adFee: "", targetAmount: "", isContractDone: false
+                        brand: brandTag, dateStr, time, duration, channel, type, extra, day, month
                     });
                 }
             });
@@ -482,16 +415,14 @@
             confirmMsg += `\n\n(※ 주의: 입력 텍스트 중 ${targetMonth}월이 아닌 데이터 ${invalidCount}건은 무시됩니다.)`;
         }
 
-        if (!confirm(confirmMsg)) {
-            return;
-        }
+        if (!confirm(confirmMsg)) return;
 
         undoStack.push(JSON.parse(JSON.stringify(schedules)));
         if(undoStack.length > 20) undoStack.shift();
 
         schedules = [...otherMonthSchedules, ...targetMonthUnrelatedBrand, ...finalTargetSchedules];
-        
         schedules.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time));
+        
         saveData();
 
         document.getElementById('bulkDS').value = '';
@@ -510,13 +441,14 @@
         alert(report);
     }
 
+    // 기존 추가: 단순 일괄 등록 로직
     function saveBulkSchedules() {
         const dsText = document.getElementById('bulkDS').value;
         const rrText = document.getElementById('bulkRR').value;
-        let addedCount = 0;
-        let updatedCount = 0;
-        let skippedCount = 0; 
+        const selectedType = document.querySelector('input[name="inputType"]:checked').value;
         
+        let addedCount = 0;
+        let skippedCount = 0; 
         let prevState = JSON.parse(JSON.stringify(schedules)); 
 
         function parseAndAdd(text, brandTag) {
@@ -534,28 +466,20 @@
                     let restStr = match[5] ? match[5].trim() : '';
                     
                     let channel = 'HD';
-                    let type = 'T컴';
+                    let type = selectedType; // 라디오 버튼 값
                     let extra = "";
-                    let adFee = "";
-                    let targetAmount = "";
 
-                    if (isWorkMode) {
-                        let parts = restStr.split('/');
-                        adFee = parts[0].trim();
-                        if (parts.length > 1) { targetAmount = parts[1].trim(); }
-                    } else {
-                        const chMatch = restStr.match(/(현대|HD|롯데|LT|NS|GS|CJ|SK스토아|SK)/i);
-                        if(chMatch) {
-                            channel = chMatch[1].toUpperCase();
-                            restStr = restStr.replace(chMatch[0], '').trim();
-                        }
-                        const tyMatch = restStr.match(/(라이브|T컴)/);
-                        if(tyMatch) {
-                            type = tyMatch[1];
-                            restStr = restStr.replace(tyMatch[0], '').trim();
-                        }
-                        extra = restStr.trim();
+                    const chMatch = restStr.match(/(현대|HD|롯데|LT|NS|GS|CJ|SK스토아|SK)/i);
+                    if(chMatch) {
+                        channel = chMatch[1].toUpperCase();
+                        restStr = restStr.replace(chMatch[0], '').trim();
                     }
+                    const tyMatch = restStr.match(/(라이브|T컴)/);
+                    if(tyMatch) {
+                        type = tyMatch[1];
+                        restStr = restStr.replace(tyMatch[0], '').trim();
+                    }
+                    extra = restStr.trim();
 
                     if (channel === '현대') channel = 'HD';
                     if (channel === '롯데') channel = 'LT';
@@ -563,28 +487,14 @@
                     
                     const dateStr = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     
-                    if (isWorkMode) {
-                        let matched = false;
-                        for (let i = 0; i < schedules.length; i++) {
-                            if (schedules[i].dateStr === dateStr && schedules[i].time === time && schedules[i].brand === brandTag) {
-                                schedules[i].adFee = adFee;
-                                schedules[i].targetAmount = targetAmount;
-                                schedules[i].channel = 'HD';
-                                matched = true;
-                            }
-                        }
-                        if (matched) { updatedCount++; return; }
-                    } else {
-                        let isDuplicate = schedules.some(s => 
-                            s.dateStr === dateStr && s.time === time && s.brand === brandTag && s.channel === channel
-                        );
-                        if (isDuplicate) { skippedCount++; return; }
-                    }
+                    let isDuplicate = schedules.some(s => 
+                        s.dateStr === dateStr && s.time === time && s.brand === brandTag && s.channel === channel
+                    );
+                    if (isDuplicate) { skippedCount++; return; }
 
                     schedules.push({
                         id: Date.now().toString() + Math.random(),
-                        brand: brandTag, dateStr, time, duration, channel, type, extra, day, month,
-                        adFee, targetAmount, isContractDone: false
+                        brand: brandTag, dateStr, time, duration, channel, type, extra, day, month
                     });
                     addedCount++;
                 }
@@ -594,8 +504,8 @@
         parseAndAdd(dsText, 'DS');
         parseAndAdd(rrText, 'RR');
         
-        if(addedCount > 0 || updatedCount > 0 || skippedCount > 0) {
-            if (addedCount > 0 || updatedCount > 0) {
+        if(addedCount > 0 || skippedCount > 0) {
+            if (addedCount > 0) {
                 undoStack.push(prevState);
                 if(undoStack.length > 20) undoStack.shift(); 
                 schedules.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time));
@@ -605,16 +515,9 @@
             document.getElementById('bulkDS').value = '';
             document.getElementById('bulkRR').value = '';
             
-            if (isWorkMode) {
-                let msgs = [];
-                if (updatedCount > 0) msgs.push(`기존 편성 ${updatedCount}건 광고비를 업데이트했습니다`);
-                if (addedCount > 0) msgs.push(`추가 편성 ${addedCount}건 반영하고 광고비도 기재했습니다`);
-                alert(msgs.join('\n'));
-            } else {
-                let msg = `${addedCount}건의 편성이 성공적으로 등록되었습니다.`;
-                if (skippedCount > 0) msg += `\n(※ 이미 등록된 중복 편성 ${skippedCount}건은 자동으로 제외되었습니다.)`;
-                alert(msg);
-            }
+            let msg = `${addedCount}건의 편성이 성공적으로 등록되었습니다.`;
+            if (skippedCount > 0) msg += `\n(※ 이미 등록된 중복 편성 ${skippedCount}건은 자동으로 제외되었습니다.)`;
+            alert(msg);
         }
     }
 
@@ -626,10 +529,9 @@
         monthSchedules.forEach(item => {
             const tagClass = item.brand === 'DS' ? 'tag-ds' : 'tag-rr';
             const displayExtra = item.extra ? ` ${item.extra}` : '';
-            const displayAdFee = item.adFee ? ` ${item.adFee}` : '';
             listDiv.insertAdjacentHTML('beforeend', `
                 <div class="schedule-item search-target" data-brand="${item.brand}" data-channel="${item.channel}" onclick="const chk=this.querySelector('.item-chk'); chk.checked=!chk.checked;">
-                    <div class="item-info"><span class="${tagClass}">(${item.brand})</span> ${item.month}/${item.day} ${item.time}(${item.duration}) ${item.channel} ${item.type}${displayExtra}${displayAdFee}</div>
+                    <div class="item-info"><span class="${tagClass}">(${item.brand})</span> ${item.month}/${item.day} ${item.time}(${item.duration}) ${item.channel} ${item.type}${displayExtra}</div>
                     <input type="checkbox" class="item-chk" value="${item.id}" onclick="event.stopPropagation()">
                 </div>
             `);
@@ -699,21 +601,6 @@
         const showT = document.getElementById('chkT').checked;
         const showHD = document.getElementById('chkHD').checked;
 
-        let dsWorkCount = 0, dsWorkAdMan = 0, dsWorkTargetMan = 0;
-        let rrWorkCount = 0, rrWorkAdMan = 0, rrWorkTargetMan = 0;
-
-        schedules.forEach(item => {
-            if (item.month === currentMonth && item.channel === 'HD' && item.type === 'T컴') {
-                let ad = parseAmountToMan(item.adFee);
-                let tg = parseAmountToMan(item.targetAmount);
-                if (item.brand === 'DS') {
-                    dsWorkCount++; dsWorkAdMan += ad; dsWorkTargetMan += tg;
-                } else if (item.brand === 'RR') {
-                    rrWorkCount++; rrWorkAdMan += ad; rrWorkTargetMan += tg;
-                }
-            }
-        });
-
         let currentDay = 1;
         for (let week = 0; week < 6; week++) {
             let row = document.createElement('tr');
@@ -749,20 +636,11 @@
                     const hdClass = item.channel === 'HD' ? 'hd-highlight' : '';
                     const conflictClass = hasConflict ? 'conflict-bold' : '';
                     
-                    let content = "";
-                    if (isWorkMode) {
-                        content = `${item.time}(${item.duration})`;
-                        if (item.adFee) { content += ` ${item.adFee}`; }
-                    } else {
-                        let extra = item.extra ? ` ${item.extra}` : '';
-                        content = `${item.time}(${item.duration}) ${item.channel} ${item.type}${extra}`;
-                    }
-
-                    const checkedAttr = item.isContractDone ? "checked" : "";
-                    const checkboxHtml = isWorkMode ? `<input type="checkbox" class="contract-chk" ${checkedAttr} onchange="handleContractCheck('${item.id}', this)">` : "";
+                    let extra = item.extra ? ` ${item.extra}` : '';
+                    let content = `${item.time}(${item.duration}) ${item.channel} ${item.type}${extra}`;
 
                     html += `<div class="cal-item ${hdClass} ${conflictClass}">
-                                <span class="${tagClass}">(${item.brand})</span> ${content} ${checkboxHtml}
+                                <span class="${tagClass}">(${item.brand})</span> ${content}
                              </div>`;
                 });
                 
@@ -781,14 +659,6 @@
                 statsBody.insertAdjacentHTML('beforeend', `<tr><td style="font-weight:bold;">${ch}</td><td>${d.dsL+d.rrL}</td><td>${d.dsT+d.rrT}</td><td style="font-weight:bold;">${tot}</td><td>${d.dsL}</td><td>${d.dsT}</td><td>${dT}</td><td>${d.rrL}</td><td>${d.rrT}</td><td>${rT}</td></tr>`);
             }
         });
-
-        if (isWorkMode) {
-            document.getElementById('workSummaryTitle').innerText = `📊 ${currentMonth}월 티커머스 집계`;
-            document.getElementById('workSummaryContent').innerHTML = `
-                <div>▶ ${currentMonth}월 다이슨 : 총 ${dsWorkCount}회 / 광 ${formatToUk(dsWorkAdMan)} / 목표 ${formatToUk(dsWorkTargetMan)}</div>
-                <div>▶ ${currentMonth}월 로보락 : 총 ${rrWorkCount}회 / 광 ${formatToUk(rrWorkAdMan)} / 목표 ${formatToUk(rrWorkTargetMan)}</div>
-            `;
-        }
     }
 </script>
 </body>
