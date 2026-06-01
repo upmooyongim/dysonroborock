@@ -16,7 +16,6 @@
         
         h2 { font-size: 1.2em; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; position: relative; }
         
-        /* 라이브/T컴 선택 라디오 버튼 스타일 */
         .mode-selector { position: absolute; right: 0; top: 0; font-size: 0.85em; display: flex; gap: 10px; align-items: center; height: 100%; }
         .mode-selector label { cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; color: #1a73e8; }
         .mode-selector input { cursor: pointer; margin: 0; }
@@ -76,7 +75,9 @@
         .cal-filter-label input { width: 14px; height: 14px; margin: 0 4px 0 0; cursor: pointer; }
         .cal-filter-divider { border-left: 1px solid #6c757d; padding-left: 15px; display: flex; align-items: center; }
 
-        #calendarTable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        /* 모바일 스크롤 처리를 위한 달력 래퍼 */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        #calendarTable { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px; } /* 최소 너비 지정으로 모바일에서 스크롤 생성 */
         #calendarTable th, #calendarTable td { border: 1px solid #dee2e6; padding: 5px; vertical-align: top; }
         #calendarTable th { background-color: #f8f9fa; text-align: center; padding: 10px; }
         #calendarTable td { height: 120px; position: relative; transition: background 0.2s; }
@@ -88,6 +89,21 @@
         .cal-item { font-size: 0.85em; margin-bottom: 3px; line-height: 1.3; word-break: break-all; padding: 2px 4px; border-radius: 3px; display: flex; align-items: center; gap: 3px; }
         .hd-highlight { background-color: #ffd600; }
         .conflict-bold { font-weight: 900 !important; text-decoration: underline; }
+
+        /* 📱 모바일 최적화 (화면이 768px 이하일 때 적용) */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.5em; margin-bottom: 15px; }
+            .top-section { flex-direction: column; gap: 15px; }
+            .cal-header-container { flex-direction: column; padding: 15px 10px; text-align: center; }
+            .cal-header-title { margin: 10px 0; }
+            /* 필터 메뉴를 아래로 내리고 가운데 정렬 */
+            .cal-filters { position: relative; right: auto; justify-content: center; flex-wrap: wrap; margin-top: 5px; width: 100%; }
+            .cal-filter-divider { padding-left: 10px; border-left: none; }
+            /* 통계 테이블 가로 스크롤 허용 */
+            .stats-table { display: block; overflow-x: auto; white-space: nowrap; }
+            textarea { height: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -105,11 +121,11 @@
             </h2>
             <div class="form-group">
                 <label style="color:#1a73e8;">다이슨 (DS) 편성 텍스트</label>
-                <textarea id="bulkDS" rows="6" placeholder="[입력 양식 예시]&#10;6/1(월) 14:30(60) HD 청소기&#10;6/2(화) 12:35(55) GS 에어스트레이트"></textarea>
+                <textarea id="bulkDS" placeholder="[입력 양식 예시]&#10;6/1(월) 14:30(60) HD 청소기&#10;6/2(화) 12:35(55) GS 에어스트레이트"></textarea>
             </div>
             <div class="form-group">
                 <label style="color:#d93025;">로보락 (RR) 편성 텍스트</label>
-                <textarea id="bulkRR" rows="6" placeholder="[입력 양식 예시]&#10;6/1(월) 18:40(60) HD S8 MaxV&#10;6/3(수) 15:30(60) NS Q Revo"></textarea>
+                <textarea id="bulkRR" placeholder="[입력 양식 예시]&#10;6/1(월) 18:40(60) HD S8 MaxV&#10;6/3(수) 15:30(60) NS Q Revo"></textarea>
             </div>
             <button class="btn-add" onclick="saveBulkSchedules()">단순 일괄 등록 (기존데이터 유지)</button>
             <button class="btn-update" id="btnUpdate" onclick="updateBulkSchedules()">🔄 현재 달력 월(Month) 특정 브랜드 덮어쓰기</button>
@@ -197,12 +213,14 @@
                     </div>
                 </div>
             </div>
-            <table id="calendarTable">
-                <thead>
-                    <tr><th class="holiday-text">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="holiday-text">토</th></tr>
-                </thead>
-                <tbody id="calendarBody"></tbody>
-            </table>
+            <div class="table-responsive">
+                <table id="calendarTable">
+                    <thead>
+                        <tr><th class="holiday-text">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="holiday-text">토</th></tr>
+                    </thead>
+                    <tbody id="calendarBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -289,11 +307,9 @@
         return h * 60 + m;
     }
 
-    // 신규 추가: 덮어쓰기 로직
     function updateBulkSchedules() {
         const dsText = document.getElementById('bulkDS').value;
         const rrText = document.getElementById('bulkRR').value;
-        // 라디오 버튼에서 라이브/T컴 선택값 가져오기
         const selectedType = document.querySelector('input[name="inputType"]:checked').value;
 
         if (!dsText.trim() && !rrText.trim()) {
@@ -322,7 +338,7 @@
                     let restStr = match[5] ? match[5].trim() : '';
 
                     let channel = 'HD';
-                    let type = selectedType; // 라디오 버튼 값 적용
+                    let type = selectedType; 
                     let extra = "";
 
                     const chMatch = restStr.match(/(현대|HD|롯데|LT|NS|GS|CJ|SK스토아|SK)/i);
@@ -331,7 +347,6 @@
                         restStr = restStr.replace(chMatch[0], '').trim();
                     }
                     
-                    // 기존 양식 호환용: 텍스트 안에 혹시 라이브/T컴이 적혀있다면 우선 추출
                     const tyMatch = restStr.match(/(라이브|T컴)/);
                     if(tyMatch) {
                         type = tyMatch[1];
@@ -441,7 +456,6 @@
         alert(report);
     }
 
-    // 기존 추가: 단순 일괄 등록 로직
     function saveBulkSchedules() {
         const dsText = document.getElementById('bulkDS').value;
         const rrText = document.getElementById('bulkRR').value;
@@ -466,7 +480,7 @@
                     let restStr = match[5] ? match[5].trim() : '';
                     
                     let channel = 'HD';
-                    let type = selectedType; // 라디오 버튼 값
+                    let type = selectedType; 
                     let extra = "";
 
                     const chMatch = restStr.match(/(현대|HD|롯데|LT|NS|GS|CJ|SK스토아|SK)/i);
@@ -636,11 +650,8 @@
                     const hdClass = item.channel === 'HD' ? 'hd-highlight' : '';
                     const conflictClass = hasConflict ? 'conflict-bold' : '';
                     
-                    // 캘린더 안에서는 '라이브'/'T컴' 글자를 압축된 태그로 변환
                     const typeShort = item.type === '라이브' ? '[L]' : '[T]';
                     let extra = item.extra ? ` ${item.extra}` : '';
-                    
-                    // content에서 item.type 제거 (공간 절약)
                     let content = `${item.time}(${item.duration}) ${item.channel}${extra}`;
 
                     html += `<div class="cal-item ${hdClass} ${conflictClass}">
