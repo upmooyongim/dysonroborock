@@ -219,18 +219,18 @@
 
 <script>
     // ==========================================
-    // 🚨 [파트 공용 온라인 동기화 설정 방법]
-    // 파이어베이스 프로젝트를 만드신 후 아래 중괄호{} 안에 본인의 키값을 붙여넣으세요.
-    // 키값을 입력하는 순간 실시간 다인공유 모드로 자동 전환됩니다!
+    // 🚨 [파이어베이스 온라인 동기화 설정]
     // ==========================================
     const firebaseConfig = {
-        apiKey: "",
-        authDomain: "",
-        databaseURL: "",
-        projectId: "",
-        storageBucket: "",
-        messagingSenderId: "",
-        appId: ""
+      apiKey: "AIzaSyCqLxgXMu4B-GbLJX4HM3Ry2Poex_dGzis",
+      authDomain: "dysonroborock.firebaseapp.com",
+      // 🚨 만약 실시간 동기화가 제대로 안 된다면, 실시간 데이터베이스 생성 후 아래 줄의 주석(//)을 지우고 사용해보세요.
+      // databaseURL: "https://dysonroborock-default-rtdb.firebaseio.com", 
+      projectId: "dysonroborock",
+      storageBucket: "dysonroborock.firebasestorage.app",
+      messagingSenderId: "659768892099",
+      appId: "1:659768892099:web:6d642a1b23d2df82c42076",
+      measurementId: "G-NG2VV4N8Z2"
     };
 
     let currentYear = 2026;
@@ -474,23 +474,25 @@
         });
 
         if (addedCount === 0 && deletedItems.length === 0) {
-            alert(`입력하신 ${targetMonth}월 [${activeBrands.join(', ')}] 브랜드 내용이 기존 스케줄과 완전히 동일합니다.`);
+            alert(`입력하신 ${targetMonth}월 [${activeBrands.join(', ')}] 브랜드 내용이 기존 스케줄과 완전히 동일합니다. (변경 사항 없음)`);
             return;
         }
 
-        let confirmMsg = `[${targetMonth}월 - ${activeBrands.join(', ')} 브랜드] 덮어쓰기를 진행하시겠습니까?\n\n[예상 변경점]\n- 추가: ${addedCount}건\n- 유지: ${duplicateCount}건\n- 삭제: ${deletedItems.length}건`;
+        let confirmMsg = `[${targetMonth}월 - ${activeBrands.join(', ')} 브랜드] 덮어쓰기를 진행하시겠습니까?\n\n[예상 변경점]\n- 추가: ${addedCount}건\n- 유지: ${duplicateCount}건\n- 삭제: ${deletedItems.length}건 (상세 목록은 완료 후 표시됩니다)`;
         if (invalidCount > 0) {
-            confirmMsg += `\n\n(※ 주의: 입력 텍스트 중 ${targetMonth}월이 아닌 데이터 ${invalidCount}건은 자동으로 필터링 및 제외됩니다.)`;
+            confirmMsg += `\n\n(※ 주의: 입력 텍스트 중 ${targetMonth}월이 아닌 데이터 ${invalidCount}건은 무시됩니다.)`;
         }
 
-        if (!confirm(confirmMsg)) return;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
 
         undoStack.push(JSON.parse(JSON.stringify(schedules)));
         if(undoStack.length > 20) undoStack.shift();
 
         schedules = [...otherMonthSchedules, ...targetMonthUnrelatedBrand, ...finalTargetSchedules];
-        schedules.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time));
         
+        schedules.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time));
         saveData();
 
         document.getElementById('bulkDS').value = '';
@@ -499,12 +501,13 @@
         let report = `✅ ${targetMonth}월 [${activeBrands.join(', ')}] 업데이트 완료!\n\n✨ 신규 추가 편성: ${addedCount}건\n🔄 중복(유지) 편성: ${duplicateCount}건\n🗑️ 삭제된 편성: ${deletedItems.length}건\n`;
 
         if (deletedItems.length > 0) {
-            report += `\n[삭제된 편성 상세 목록]\n`;
+            report += `\n[삭제된 편성 상세]\n`;
             deletedItems.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time));
             deletedItems.forEach(d => {
-                report += `- ${d.month}/${d.day} ${d.time} ${d.channel} ${d.type} (${d.brand})\n`;
+                report += `- ${d.month}/${d.day}(${new Date(d.dateStr).toLocaleDateString('ko-KR', {weekday: 'short'})}) ${d.time} ${d.channel} ${d.type} (${d.brand})\n`;
             });
         }
+
         alert(report);
     }
 
